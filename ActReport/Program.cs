@@ -16,7 +16,7 @@ namespace ActReport.ConsoleFillDb
                 Console.WriteLine(emp.LastName);
             }
 
-            Console.WriteLine("<Eingabe drücken>");
+            Console.WriteLine("<Eingabetaste drücken>");
             Console.ReadLine();
         }
     }
