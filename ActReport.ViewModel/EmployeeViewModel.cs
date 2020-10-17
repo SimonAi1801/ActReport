@@ -14,9 +14,11 @@ namespace ActReport.ViewModel
     {
         private string _firstName;
         private string _lastName;
+        private string _filterText = "A";
         private Employee _selectedEmployee;
         private ObservableCollection<Employee> _employees;
         private ICommand _cmdSaveChanges;
+        private ICommand _cmdNewEmp;
 
         public string FirstName
         {
@@ -60,7 +62,7 @@ namespace ActReport.ViewModel
         {
             get
             {
-                if(_cmdSaveChanges == null)
+                if (_cmdSaveChanges == null)
                 {
                     _cmdSaveChanges = new RelayCommand(
                         execute: _ =>
@@ -73,7 +75,7 @@ namespace ActReport.ViewModel
 
                             LoadEmployees();
                         },
-                        canExecute: _ => _selectedEmployee != null);
+                        canExecute: _ => _selectedEmployee != null && _lastName.Length >= 3);
                 }
 
                 return _cmdSaveChanges;
@@ -82,19 +84,61 @@ namespace ActReport.ViewModel
             set { _cmdSaveChanges = value; }
         }
 
+        public ICommand CmdSaveNewEmp
+        {
+            get
+            {
+                if (_cmdNewEmp == null)
+                {
+                    _cmdNewEmp = new RelayCommand(
+                        execute: _ =>
+                        {
+                            using IUnitOfWork uow = new UnitOfWork();
+                            Employee newEmployee = new Employee
+                            {
+                                FirstName = _firstName,
+                                LastName = _lastName
+                            };
+                            uow.EmployeeRepository.Insert(newEmployee);
+                            uow.Save();
+
+                            LoadEmployees();
+                        },
+                        canExecute: _ => _firstName != null && _lastName?.Length >= 3);
+                }
+                return _cmdNewEmp;
+            }
+            set { _cmdNewEmp = value; }
+        }
+
         public EmployeeViewModel()
         {
             LoadEmployees();
         }
         private void LoadEmployees()
         {
-            using(UnitOfWork uow = new UnitOfWork())
+            using (UnitOfWork uow = new UnitOfWork())
             {
                 var employees = uow.EmployeeRepository
-                    .Get(orderBy: coll => coll.OrderBy(emp => emp.LastName))
+                    .Get(orderBy: coll => coll.OrderBy(emp => emp.LastName),
+                         filter: emp => emp.LastName.StartsWith(FilterText))
                     .ToList();
 
                 Employees = new ObservableCollection<Employee>(employees);
+            }
+        }
+
+        public string FilterText
+        {
+            get
+            {
+                return _filterText;
+            }
+            set 
+            { 
+                _filterText = value;
+
+                LoadEmployees();
             }
         }
     }
